@@ -1,0 +1,31 @@
+{
+    "expo": {
+      "name": "StreakMate",
+      "slug": "streakmate",
+      "version": "1.0.0",
+      "orientation": "portrait",
+      "icon": "./assets/icon.png",
+      "userInterfaceStyle": "light",
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      },
+      "android": {
+        "package": "com.yourname.streakmate",
+        "permissions": [
+          "android.permission.SCHEDULE_EXACT_ALARM",
+          "android.permission.RECEIVE_BOOT_COMPLETED"
+        ]
+      },
+      "plugins": [
+        [
+          "expo-notifications",
+          {
+            "icon": "./assets/notification-icon.png",
+            "color": "#ffffff"
+          }
+        ]
+      ]
+    }
+  }
