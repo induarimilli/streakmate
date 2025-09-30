@@ -22,19 +22,32 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Storage keys
 const HABITS_KEY = '@streakmate_habits';
 
-// Mock friend data for leaderboard
-const MOCK_FRIENDS = [
+interface Habit {
+  id: string;
+  name: string;
+  streak: number;
+  lastCompleted: string | null;
+  createdAt: string;
+}
+
+interface Person {
+  id: string;
+  name: string;
+  habits: { [key: string]: number };
+  isUser?: boolean;
+  totalStreak?: number;
+}
+
+const MOCK_FRIENDS: Person[] = [
   { id: '1', name: 'Alex', habits: { 'workout': 45, 'reading': 30 } },
   { id: '2', name: 'Jordan', habits: { 'workout': 38, 'meditation': 22 } },
   { id: '3', name: 'Sam', habits: { 'reading': 50, 'running': 18 } },
   { id: '4', name: 'Taylor', habits: { 'workout': 28, 'reading': 35 } },
 ];
 
-// Utility: Check if date is today
-const isToday = (dateString) => {
+const isToday = (dateString: string | null): boolean => {
   if (!dateString) return false;
   const date = new Date(dateString);
   const today = new Date();
@@ -45,8 +58,7 @@ const isToday = (dateString) => {
   );
 };
 
-// Utility: Check if date was yesterday
-const isYesterday = (dateString) => {
+const isYesterday = (dateString: string | null): boolean => {
   if (!dateString) return false;
   const date = new Date(dateString);
   const yesterday = new Date();
@@ -58,8 +70,7 @@ const isYesterday = (dateString) => {
   );
 };
 
-// Utility: Reset streaks if habit wasn't done yesterday
-const resetStreaksIfNeeded = (habits) => {
+const resetStreaksIfNeeded = (habits: Habit[]): Habit[] => {
   return habits.map(habit => {
     if (!habit.lastCompleted) return habit;
     const completedToday = isToday(habit.lastCompleted);
@@ -71,8 +82,7 @@ const resetStreaksIfNeeded = (habits) => {
   });
 };
 
-// Component: Habit Card
-const HabitCard = ({ habit, onToggle, onDelete }) => {
+const HabitCard = ({ habit, onToggle, onDelete }: { habit: Habit; onToggle: (id: string) => void; onDelete: (id: string) => void }) => {
   const completedToday = isToday(habit.lastCompleted);
 
   return (
@@ -98,13 +108,12 @@ const HabitCard = ({ habit, onToggle, onDelete }) => {
   );
 };
 
-// Component: Leaderboard Card
-const LeaderboardCard = ({ person, rank }) => {
-  const getMedal = (r) => {
+const LeaderboardCard = ({ person, rank }: { person: Person; rank: number }) => {
+  const getMedal = (r: number): string => {
     if (r === 1) return '🥇';
     if (r === 2) return '🥈';
     if (r === 3) return '🥉';
-    return r;
+    return r.toString();
   };
 
   return (
@@ -128,10 +137,9 @@ const LeaderboardCard = ({ person, rank }) => {
   );
 };
 
-// Main App
 export default function App() {
-  const [screen, setScreen] = useState('home');
-  const [habits, setHabits] = useState([]);
+  const [screen, setScreen] = useState<'home' | 'add' | 'leaderboard'>('home');
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [newHabitName, setNewHabitName] = useState('');
 
   useEffect(() => {
@@ -164,7 +172,7 @@ export default function App() {
   const loadHabits = async () => {
     try {
       const data = await AsyncStorage.getItem(HABITS_KEY);
-      const loadedHabits = data ? JSON.parse(data) : [];
+      const loadedHabits: Habit[] = data ? JSON.parse(data) : [];
       const resetHabits = resetStreaksIfNeeded(loadedHabits);
       setHabits(resetHabits);
       if (JSON.stringify(loadedHabits) !== JSON.stringify(resetHabits)) {
@@ -175,7 +183,7 @@ export default function App() {
     }
   };
 
-  const saveHabits = async (habitsToSave) => {
+  const saveHabits = async (habitsToSave: Habit[]) => {
     try {
       await AsyncStorage.setItem(HABITS_KEY, JSON.stringify(habitsToSave));
     } catch (error) {
@@ -183,7 +191,7 @@ export default function App() {
     }
   };
 
-  const toggleHabit = async (id) => {
+  const toggleHabit = async (id: string) => {
     const updated = habits.map(habit => {
       if (habit.id === id) {
         const now = new Date().toISOString();
@@ -200,7 +208,7 @@ export default function App() {
     await saveHabits(updated);
   };
 
-  const deleteHabit = (id) => {
+  const deleteHabit = (id: string) => {
     Alert.alert('Delete Habit', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -220,7 +228,7 @@ export default function App() {
       Alert.alert('Error', 'Please enter a habit name');
       return;
     }
-    const newHabit = {
+    const newHabit: Habit = {
       id: Date.now().toString(),
       name: newHabitName.trim(),
       streak: 0,
@@ -234,15 +242,15 @@ export default function App() {
     setScreen('home');
   };
 
-  const getLeaderboardData = () => {
-    const allData = [
+  const getLeaderboardData = (): Person[] => {
+    const allData: Person[] = [
       {
         id: 'user',
         name: 'You',
         habits: habits.reduce((acc, h) => {
           acc[h.name.toLowerCase()] = h.streak;
           return acc;
-        }, {}),
+        }, {} as { [key: string]: number }),
         isUser: true,
       },
       ...MOCK_FRIENDS,
@@ -251,7 +259,7 @@ export default function App() {
       ...p,
       totalStreak: Object.values(p.habits).reduce((sum, s) => sum + s, 0),
     }));
-    withTotals.sort((a, b) => b.totalStreak - a.totalStreak);
+    withTotals.sort((a, b) => (b.totalStreak || 0) - (a.totalStreak || 0));
     return withTotals;
   };
 
